@@ -1,0 +1,55 @@
+
+name: Build ACELLARZECK APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+
+      - name: Extract Android Project
+        run: |
+          mkdir -p unpacked
+          unzip -q android-project.zip -d unpacked
+
+      - name: Locate Gradle Wrapper
+        run: |
+          find unpacked -name gradlew -type f
+
+      - name: Build APK
+        run: |
+          cd unpacked/ACELLARZECK_AI_VIDEO_STUDIO_ANDROID_V2.1
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/app-debug.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ACELLARZECK-APK
+          path: app-debug.apk
+          if-no-files-found: error
